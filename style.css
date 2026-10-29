@@ -22,6 +22,8 @@ html, body {
   background: var(--night);
   color: var(--ink);
   font-family: var(--sans);
+  /* No double-tap to zoom on phones. */
+  touch-action: manipulation;
 }
 
 /* The room: a dark floor with a soft glow behind the cabinet. */
@@ -161,6 +163,8 @@ html, body {
   overflow-y: auto;
   padding: 4px;
   scrollbar-width: none;
+  /* A scroll container, so it doesn't pick this up from body. */
+  touch-action: manipulation;
 }
 
 .tile {
