@@ -173,6 +173,14 @@
   setupStick();
   setupButtons();
 
+  // Safari can still zoom on a double tap despite touch-action, so swallow
+  // the second tap.
+  let lastTap = 0;
+  document.addEventListener('touchend', e => {
+    if (e.timeStamp - lastTap < 350) e.preventDefault();
+    lastTap = e.timeStamp;
+  }, { passive: false });
+
   window.addEventListener('resize', () => frame(shot));
 
   // Coming back with the browser's back button can restore the page as we
