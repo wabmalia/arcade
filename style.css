@@ -342,7 +342,7 @@ html, body {
 .stick.held { cursor: grabbing; }
 
 /* The lever pivots on a point in the middle of the base. arcade.js sets
-   --tilt (left/right) and --reach (below 1 leans away, above 1 toward you). */
+   --tilt (left/right) and --reach (above 1 pushed up, below 1 pulled down). */
 .lever {
   --tilt: 0deg;
   --reach: 1;

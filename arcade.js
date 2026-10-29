@@ -116,7 +116,7 @@
   const STICK = {
     throw: 28,     // cabinet px of pointer travel for a full tilt
     maxTilt: 28,   // degrees left/right at full tilt
-    lean: 0.18,    // how much the lever shortens/lengthens leaning away/toward you
+    lean: 0.18,    // how much the lever lengthens/shortens when pushed up/down
   };
 
   function setupStick() {
@@ -141,7 +141,7 @@
         dy *= STICK.throw / d;
       }
       lever.style.setProperty('--tilt', `${(dx / STICK.throw) * STICK.maxTilt}deg`);
-      lever.style.setProperty('--reach', String(1 + (dy / STICK.throw) * STICK.lean));
+      lever.style.setProperty('--reach', String(1 - (dy / STICK.throw) * STICK.lean));
     });
     const release = () => {
       if (!grab) return;
