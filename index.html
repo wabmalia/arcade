@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12152a">
+  <title>Arcade</title>
+  <meta name="description" content="A little arcade cabinet with the games I've been building.">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <main class="room">
+    <div class="stage" id="stage">
+      <div class="cabinet" id="cabinet">
+        <header class="marquee">
+          <span class="marquee-text">ARCADE</span>
+        </header>
+
+        <div class="bezel">
+          <section class="screen" id="screen" aria-label="Game select">
+            <div class="crt">
+              <h1 class="screen-title">SELECT GAME</h1>
+
+              <!-- One tile per game. To add a game, copy a tile. -->
+              <nav class="tiles" aria-label="Games">
+                <a class="tile" href="https://wabmalia.github.io/squared/" data-name="SQUARED">
+                  <svg class="art" viewBox="0 0 200 110" aria-hidden="true">
+                    <rect width="200" height="110" fill="#1d2140"/>
+                    <path fill="#353b66" d="M0 110V70h62v20h22v20zM200 110V70h-62v20h-22v20z"/>
+                    <path fill="none" stroke="#f2b134" stroke-width="2.5" d="M0 71.2h60.8v20h22v20M200 71.2h-60.8v20h-22v20"/>
+                    <path fill="#f2b134" d="M55 71h4v9a2 2 0 0 1-4 0zM46 71h3v5a1.5 1.5 0 0 1-3 0zM141 71h4v9a2 2 0 0 1-4 0zM151 71h3v5a1.5 1.5 0 0 1-3 0zM79 91h3.5v9a1.75 1.75 0 0 1-3.5 0zM117.5 91h3.5v9a1.75 1.75 0 0 1-3.5 0z"/>
+                    <rect x="74" y="16" width="52" height="52" rx="4" fill="#f2b134" transform="rotate(-6 100 42)"/>
+                  </svg>
+                  <span class="tile-name">SQUARED</span>
+                  <span class="tile-desc">Grow the square, drop it through the gap.</span>
+                </a>
+
+                <a class="tile" href="https://wabmalia.github.io/turn7/" data-name="TURN 7">
+                  <svg class="art" viewBox="0 0 200 110" aria-hidden="true">
+                    <rect width="200" height="110" fill="#1d2140"/>
+                    <g transform="rotate(-12 52 60)">
+                      <rect x="28" y="28" width="48" height="66" rx="6" fill="#fffaf0" stroke="#c42a2a" stroke-width="3"/>
+                      <text x="52" y="70" text-anchor="middle" font-size="26" font-weight="800" fill="#c42a2a" font-family="system-ui, sans-serif">10</text>
+                    </g>
+                    <g transform="rotate(-2 100 56)">
+                      <rect x="76" y="22" width="48" height="66" rx="6" fill="#fffaf0" stroke="#2a8a3a" stroke-width="3"/>
+                      <text x="100" y="65" text-anchor="middle" font-size="28" font-weight="800" fill="#2a8a3a" font-family="system-ui, sans-serif">5</text>
+                    </g>
+                    <g transform="rotate(10 148 60)">
+                      <rect x="124" y="28" width="48" height="66" rx="6" fill="#f2b134" stroke="#1d2340" stroke-width="3"/>
+                      <text x="148" y="71" text-anchor="middle" font-size="30" font-weight="900" fill="#1d2340" font-family="system-ui, sans-serif">7</text>
+                    </g>
+                  </svg>
+                  <span class="tile-name">TURN<sup>7</sup></span>
+                  <span class="tile-desc">Push-your-luck cards with friends.</span>
+                </a>
+              </nav>
+
+              <p class="insert-coin" aria-hidden="true">INSERT COIN</p>
+            </div>
+          </section>
+        </div>
+
+        <div class="panel" aria-hidden="true">
+          <!-- Just for fun: they move when used, but don't do anything (yet). -->
+          <div class="stick" id="stick">
+            <div class="lever" id="lever"><div class="stick-ball"></div></div>
+          </div>
+          <div class="buttons">
+            <span class="btn btn-red"></span>
+            <span class="btn btn-gold"></span>
+            <span class="btn btn-blue"></span>
+          </div>
+        </div>
+
+        <div class="body" aria-hidden="true">
+          <div class="coin-door">
+            <span class="coin-slot"><i>25¢</i></span>
+            <span class="coin-slot"><i>25¢</i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Shown once the camera has zoomed until the screen fills the viewport.
+       It lives outside the cabinet so it always fits, whatever the shape of
+       the window. -->
+  <div class="loading" id="loading" role="status" hidden>
+    <p class="loading-text">LOADING <span id="loading-name"></span></p>
+    <div class="loading-bar"><div class="loading-fill"></div></div>
+  </div>
+
+  <script src="arcade.js"></script>
+</body>
+</html>

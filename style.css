@@ -1,0 +1,462 @@
+/* Palette shared with turn7 and squared. */
+:root {
+  --night: #12152a;
+  --navy: #1d2140;
+  --navy-2: #272c52;
+  --navy-3: #353b66;
+  --ink: #eef0fa;
+  --muted: #c0c4dc;
+  --gold: #f2b134;
+  --red: #e2553f;
+  --blue: #5b93f0;
+  --pixel: 'Press Start 2P', ui-monospace, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+/* The room: a dark floor with a soft glow behind the cabinet. */
+.room {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 45%, rgb(91 147 240 / 0.16), transparent 70%),
+    linear-gradient(var(--night) 70%, #0b0d1c);
+}
+
+/* Everything inside is laid out at a fixed design size; arcade.js moves the
+   camera by transforming the stage. */
+.stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.stage.moving {
+  transition: transform var(--move-ms, 1600ms) cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* --- Cabinet ------------------------------------------------------------- */
+
+.cabinet {
+  position: relative;
+  width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 40px 60px rgb(0 0 0 / 0.55));
+}
+
+.marquee {
+  width: 560px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px 22px 6px 6px;
+  border: 6px solid var(--navy-3);
+  background:
+    linear-gradient(rgb(255 255 255 / 0.08), transparent 40%),
+    radial-gradient(ellipse at 50% 60%, #2b3170, var(--navy) 75%);
+  box-shadow: inset 0 0 40px rgb(242 177 52 / 0.25), 0 0 50px rgb(242 177 52 / 0.18);
+}
+.marquee-text {
+  font-family: var(--pixel);
+  font-size: 46px;
+  letter-spacing: 6px;
+  color: var(--gold);
+  text-shadow: 0 0 6px rgb(242 177 52 / 0.9), 0 0 24px rgb(242 177 52 / 0.6), 4px 4px 0 var(--red);
+}
+
+.bezel {
+  position: relative;
+  width: 560px;
+  padding: 44px 48px 48px;
+  background: linear-gradient(90deg, var(--navy-2), var(--navy) 12%, var(--navy) 88%, var(--navy-2));
+  border-left: 8px solid var(--gold);
+  border-right: 8px solid var(--gold);
+}
+/* A thin inner pinstripe on the sides, like cabinet trim. */
+.bezel::before {
+  content: '';
+  position: absolute;
+  inset: 0 10px;
+  border-left: 2px solid rgb(242 177 52 / 0.35);
+  border-right: 2px solid rgb(242 177 52 / 0.35);
+  pointer-events: none;
+}
+
+.screen {
+  position: relative;
+  width: 448px;
+  height: 336px; /* 4:3 */
+  border-radius: 22px;
+  overflow: hidden;
+  background: #0a0c1d;
+  box-shadow:
+    0 0 0 10px #090a14,
+    0 0 0 12px var(--navy-3),
+    0 0 40px rgb(91 147 240 / 0.25);
+}
+/* Scanlines and a vignette over everything on the screen. */
+.screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(transparent 0 2px, rgb(0 0 0 / 0.18) 2px 3px),
+    radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55) 100%);
+  z-index: 3;
+}
+
+.crt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 20px 16px;
+  gap: 14px;
+}
+/* CRT power-on: a bright line that opens up into the picture. */
+.powered .crt {
+  animation: power-on 700ms ease-out both;
+}
+@keyframes power-on {
+  0% { transform: scale(1, 0.004); filter: brightness(4); opacity: 0; }
+  35% { transform: scale(1, 0.004); filter: brightness(4); opacity: 1; }
+  70% { transform: scale(1, 1.04); filter: brightness(1.6); }
+  100% { transform: scale(1, 1); filter: brightness(1); }
+}
+/* Only hide the picture before power-on when the script is there to turn it on. */
+.js .screen:not(.powered) .crt { opacity: 0; }
+
+.screen-title {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: 15px;
+  font-weight: normal;
+  letter-spacing: 2px;
+  color: var(--ink);
+  text-shadow: 0 0 8px rgb(238 240 250 / 0.5);
+}
+
+.tiles {
+  flex: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-content: start;
+  overflow-y: auto;
+  padding: 4px;
+  scrollbar-width: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid var(--navy-3);
+  background: var(--navy);
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.tile:hover,
+.tile:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgb(242 177 52 / 0.35), 0 0 18px rgb(242 177 52 / 0.35);
+  transform: translateY(-2px);
+}
+/* Picking a game: everything else fades away and the chosen tile glides to
+   the middle of the screen (arcade.js sets --dx/--dy to get it there). */
+.screen-title,
+.insert-coin {
+  transition: opacity 300ms ease;
+}
+.picking .screen-title,
+.picking .insert-coin,
+.picking .tile:not(.chosen) {
+  opacity: 0;
+  pointer-events: none;
+}
+.picking .tile:not(.chosen) {
+  transform: scale(0.9);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+.picking .tiles {
+  overflow: visible;
+}
+.tile.chosen {
+  position: relative;
+  z-index: 1;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgb(242 177 52 / 0.35), 0 0 28px rgb(242 177 52 / 0.45);
+  transform: translate(var(--dx, 0), var(--dy, 0)) scale(1.18);
+  transition: transform 550ms cubic-bezier(0.65, 0, 0.35, 1), box-shadow 300ms ease;
+  animation: chosen 120ms steps(2) 4 550ms;
+}
+@keyframes chosen {
+  50% { border-color: var(--ink); box-shadow: 0 0 24px rgb(242 177 52 / 0.7); }
+}
+
+.art {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
+.tile-name {
+  font-family: var(--pixel);
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+.tile-name sup {
+  font-size: 0.6em;
+}
+.tile-desc {
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.insert-coin {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--red);
+  animation: blink 1.2s steps(1) infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* --- Loading, shown after a game is picked ------------------------------- */
+
+/* Same look as the screen, so it takes over from the zoomed-in screen seamlessly. */
+.loading {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 0 16px;
+  background: #0a0c1d;
+}
+.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(transparent 0 3px, rgb(0 0 0 / 0.18) 3px 5px),
+    radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55) 100%);
+}
+.loading[hidden] { display: none; }
+.loading-text {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: clamp(14px, 4vw, 22px);
+  letter-spacing: 2px;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--ink);
+  text-shadow: 0 0 10px rgb(238 240 250 / 0.5);
+}
+.loading-bar {
+  width: min(70vw, 420px);
+  height: 26px;
+  padding: 4px;
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 16px rgb(242 177 52 / 0.35);
+}
+.loading-fill {
+  height: 100%;
+  width: 0;
+  background: var(--gold);
+  animation: fill var(--load-ms, 1200ms) steps(16) forwards;
+}
+@keyframes fill {
+  to { width: 100%; }
+}
+
+/* --- Control panel and lower body ---------------------------------------- */
+
+.panel {
+  position: relative;
+  isolation: isolate;
+  width: 620px;
+  height: 110px;
+  margin-top: -2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 120px;
+}
+/* The slanted panel shape is its own layer: clipping the panel itself would
+   also cut off the joystick sticking up above it. */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  clip-path: polygon(30px 0, 590px 0, 100% 100%, 0 100%);
+  background: linear-gradient(var(--navy-3), var(--navy-2));
+  border-bottom: 8px solid var(--gold);
+}
+.stick {
+  position: relative;
+  width: 64px;
+  height: 22px;
+  margin-top: 30px;
+  border-radius: 50%;
+  background: #0b0d1c;
+}
+.stick {
+  cursor: grab;
+  touch-action: none;
+}
+.stick.held { cursor: grabbing; }
+
+/* The lever pivots on a point in the middle of the base. arcade.js sets
+   --tilt (left/right) and --reach (below 1 leans away, above 1 toward you). */
+.lever {
+  --tilt: 0deg;
+  --reach: 1;
+  position: absolute;
+  left: 32px;
+  bottom: 11px;
+  width: 0;
+  height: 0;
+  transform: rotate(var(--tilt));
+}
+.lever::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  bottom: 0;
+  width: 8px;
+  height: 44px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #555a78, #9aa0bf, #555a78);
+  transform: scaleY(var(--reach));
+  transform-origin: bottom;
+}
+.stick-ball {
+  position: absolute;
+  left: -19px;
+  bottom: 34px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff9a85, var(--red) 45%, #8f2a1c);
+  transform: translateY(calc((1 - var(--reach)) * 44px));
+}
+/* Let go: spring back to the middle with a little wobble. */
+.stick.spring .lever,
+.stick.spring .lever::before,
+.stick.spring .stick-ball {
+  transition: transform 380ms cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+.buttons {
+  display: flex;
+  gap: 18px;
+  margin-top: 10px;
+}
+.btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  box-shadow: 0 5px 0 rgb(0 0 0 / 0.45), inset 0 -4px 0 rgb(0 0 0 / 0.25);
+  cursor: pointer;
+  touch-action: none;
+  transition: transform 60ms ease, box-shadow 60ms ease, filter 60ms ease;
+}
+/* Pushed in: sinks into the panel and lights up. */
+.btn.pressed {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.45), inset 0 -1px 0 rgb(0 0 0 / 0.25), 0 0 16px currentColor;
+  filter: brightness(1.25);
+}
+.btn-red { color: var(--red); }
+.btn-gold { color: var(--gold); }
+.btn-blue { color: var(--blue); }
+.btn-red { background: radial-gradient(circle at 35% 30%, #ff9a85, var(--red) 60%); }
+.btn-gold { background: radial-gradient(circle at 35% 30%, #ffe0a0, var(--gold) 60%); }
+.btn-blue { background: radial-gradient(circle at 35% 30%, #b8d0ff, var(--blue) 60%); }
+
+.body {
+  width: 560px;
+  height: 320px;
+  display: flex;
+  justify-content: center;
+  padding-top: 60px;
+  background: linear-gradient(90deg, var(--navy-2), var(--navy) 12%, var(--navy) 88%, var(--navy-2));
+  border-left: 8px solid var(--gold);
+  border-right: 8px solid var(--gold);
+  border-radius: 0 0 8px 8px;
+}
+.coin-door {
+  width: 200px;
+  height: 130px;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  padding-top: 26px;
+  border-radius: 8px;
+  background: #0f1228;
+  border: 3px solid var(--navy-3);
+}
+.coin-slot {
+  width: 54px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #1b1f3d;
+  border: 2px solid #3a2a2a;
+}
+.coin-slot i {
+  font-style: normal;
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: #fff;
+  padding: 8px 6px;
+  border-radius: 3px;
+  background: var(--red);
+  box-shadow: 0 0 12px rgb(226 85 63 / 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .powered .crt,
+  .insert-coin,
+  .tile.chosen,
+  .loading-fill { animation: none; }
+  .loading-fill { width: 100%; }
+  .tile:hover,
+  .tile:focus-visible { transform: none; }
+  .tile,
+  .tile.chosen,
+  .picking .tile:not(.chosen),
+  .screen-title,
+  .insert-coin { transition: none; }
+}
