@@ -10,7 +10,16 @@ Plain HTML/CSS/JS, no build step. Open `index.html` in a browser.
 
 Copy one of the `<a class="tile">` blocks in `index.html` and change its
 `href`, `data-name` (shown on the loading screen), artwork, name and
-description. The artwork is an inline 200x110 SVG.
+description. The artwork is an inline 200x110 SVG. The screen shows it as a
+thumbnail and, for the selected game, big in the preview with the name and
+description beside it.
+
+## Controls
+
+Hover or tap a thumbnail to select it, click or tap it again to start. The
+joystick moves the selection and any of the three buttons starts the game.
+The selection clears after 5 seconds; until something is selected the
+preview cycles through the games.
 
 ## Tuning
 

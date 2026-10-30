@@ -130,7 +130,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   padding: 22px 20px 16px;
-  gap: 14px;
+  gap: 12px;
 }
 /* CRT power-on: a bright line that opens up into the picture. */
 .powered .crt {
@@ -155,24 +155,26 @@ html, body {
   text-shadow: 0 0 8px rgb(238 240 250 / 0.5);
 }
 
+/* Thumbnails: up to six a row, two rows in view, scrolling past that. */
 .tiles {
   flex: 1;
+  min-height: 0;
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  align-content: start;
+  grid-template-columns: repeat(auto-fit, 60px);
+  justify-content: center;
+  align-content: center;
+  gap: 8px;
   overflow-y: auto;
   padding: 4px;
   scrollbar-width: none;
 }
 
 .tile {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border-radius: 10px;
+  position: relative;
+  display: block;
+  padding: 3px;
+  border-radius: 6px;
   border: 2px solid var(--navy-3);
   background: var(--navy);
   color: inherit;
@@ -181,36 +183,38 @@ html, body {
   transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
 .tile:hover,
-.tile:focus-visible {
+.tile:focus-visible,
+.tile.selected {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgb(242 177 52 / 0.35), 0 0 18px rgb(242 177 52 / 0.35);
   transform: translateY(-2px);
 }
-/* Picking a game: everything else fades away and the chosen tile glides to
+/* While nothing is selected the preview cycles through the games; the one
+   it shows gets a quieter outline. */
+.tile.featured {
+  border-color: var(--muted);
+}
+/* Picking a game: everything else fades away and the preview art glides to
    the middle of the screen (arcade.js sets --dx/--dy to get it there). */
 .screen-title,
-.insert-coin {
+.insert-coin,
+.tiles,
+.preview-info {
   transition: opacity 300ms ease;
 }
 .picking .screen-title,
 .picking .insert-coin,
-.picking .tile:not(.chosen) {
+.picking .tiles,
+.picking .preview-info {
   opacity: 0;
   pointer-events: none;
 }
-.picking .tile:not(.chosen) {
-  transform: scale(0.9);
-  transition: opacity 300ms ease, transform 300ms ease;
-}
-.picking .tiles {
-  overflow: visible;
-}
-.tile.chosen {
+.preview-art.chosen {
   position: relative;
   z-index: 1;
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgb(242 177 52 / 0.35), 0 0 28px rgb(242 177 52 / 0.45);
-  transform: translate(var(--dx, 0), var(--dy, 0)) scale(1.18);
+  transform: translate(var(--dx, 0), var(--dy, 0)) scale(1.3);
   transition: transform 550ms cubic-bezier(0.65, 0, 0.35, 1), box-shadow 300ms ease;
   animation: chosen 120ms steps(2) 4 550ms;
 }
@@ -222,20 +226,62 @@ html, body {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 6px;
+  border-radius: 3px;
 }
-.tile-name {
+/* The name and description are read from the tile (and by screen readers)
+   but shown in the preview. */
+.tile-name,
+.tile-desc {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The preview: big art on the left, name and description on the right. */
+.preview {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+html:not(.js) .preview { display: none; }
+.preview-art {
+  width: 204px;
+  flex: none;
+  overflow: hidden;
+  border: 2px solid var(--navy-3);
+  border-radius: 8px;
+  background: var(--navy);
+  transition: border-color 150ms ease;
+}
+.preview-art .art {
+  border-radius: 0;
+}
+.preview.live .preview-art {
+  border-color: var(--gold);
+}
+.preview-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.preview-name {
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.4;
   color: var(--gold);
   letter-spacing: 1px;
 }
-.tile-name sup {
+.preview-name sup {
   font-size: 0.6em;
 }
-.tile-desc {
+.preview-desc {
   font-size: 13px;
-  line-height: 1.3;
+  line-height: 1.35;
   color: var(--muted);
 }
 
@@ -476,14 +522,17 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .powered .crt,
   .insert-coin,
-  .tile.chosen,
+  .preview-art.chosen,
   .loading-fill { animation: none; }
   .loading-fill { width: 100%; }
   .tile:hover,
-  .tile:focus-visible { transform: none; }
+  .tile:focus-visible,
+  .tile.selected { transform: none; }
   .tile,
-  .tile.chosen,
-  .picking .tile:not(.chosen),
+  .tiles,
+  .preview-art,
+  .preview-art.chosen,
+  .preview-info,
   .screen-title,
   .insert-coin { transition: none; }
 }

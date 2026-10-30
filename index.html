@@ -28,7 +28,18 @@
             <div class="crt">
               <h1 class="screen-title">SELECT GAME</h1>
 
-              <!-- One tile per game. To add a game, copy a tile. -->
+              <!-- The selected game, big. arcade.js fills it in from the tiles. -->
+              <div class="preview" id="preview" aria-hidden="true">
+                <div class="preview-art" id="preview-art"></div>
+                <div class="preview-info">
+                  <span class="preview-name" id="preview-name"></span>
+                  <span class="preview-desc" id="preview-desc"></span>
+                </div>
+              </div>
+
+              <!-- One tile per game. To add a game, copy a tile: the screen
+                   shows its art as a thumbnail and its name and description
+                   in the preview above. -->
               <nav class="tiles" aria-label="Games">
                 <a class="tile" href="https://wabmalia.github.io/squared/" data-name="SQUARED">
                   <svg class="art" viewBox="0 0 200 110" aria-hidden="true">
@@ -76,7 +87,7 @@
         </div>
 
         <div class="panel" aria-hidden="true">
-          <!-- Just for fun: they move when used, but don't do anything (yet). -->
+          <!-- The joystick picks a game and any button starts it (arcade.js). -->
           <div class="stick" id="stick">
             <div class="lever" id="lever"><div class="stick-ball"></div></div>
           </div>

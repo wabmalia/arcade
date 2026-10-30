@@ -20,10 +20,16 @@
     load: 1200,       // ms the loading bar takes to fill
   };
 
+  const SELECT_MS = 5000;  // the selection goes away after this long without a push
+  const ATTRACT_MS = 2500; // how long each game shows in the preview while nothing is selected
+
   const stage = document.getElementById('stage');
   const screen = document.getElementById('screen');
   const loading = document.getElementById('loading');
   const loadingName = document.getElementById('loading-name');
+  const preview = document.getElementById('preview');
+  const previewArt = document.getElementById('preview-art');
+  const tiles = [...document.querySelectorAll('.tile')];
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let shot = 'cabinet';
@@ -73,23 +79,74 @@
     }, TIMING.introDelay);
   }
 
-  // Offset that puts the tile's centre on the centre of the screen picture.
-  function centreOffset(tile) {
-    const crt = tile.offsetParent;
-    const scrolled = tile.parentElement.scrollTop;
+  // --- Preview: the selected game big, or each game in turn ----------------
+
+  let selected = null;
+  let featured = null;
+  let selectTimer = 0;
+  let attractTimer = 0;
+
+  function feature(tile) {
+    if (featured) featured.classList.remove('featured');
+    featured = tile;
+    tile.classList.add('featured');
+    previewArt.replaceChildren(tile.querySelector('.art').cloneNode(true));
+    document.getElementById('preview-name').innerHTML = tile.querySelector('.tile-name').innerHTML;
+    document.getElementById('preview-desc').textContent = tile.querySelector('.tile-desc').textContent;
+  }
+
+  // Nothing selected: cycle through the games, like an arcade's attract mode.
+  function attract() {
+    attractTimer = setTimeout(() => {
+      feature(tiles[(tiles.indexOf(featured) + 1) % tiles.length]);
+      attract();
+    }, ATTRACT_MS);
+  }
+
+  function select(tile) {
+    clearTimeout(selectTimer);
+    clearTimeout(attractTimer);
+    if (selected) selected.classList.remove('selected');
+    selected = tile;
+    preview.classList.toggle('live', !!tile);
+    if (!tile) {
+      attract();
+      return;
+    }
+    tile.classList.add('selected');
+    feature(tile);
+    keepInView(tile);
+    selectTimer = setTimeout(() => select(null), SELECT_MS);
+  }
+
+  // Scroll the game list just enough to show the tile.
+  function keepInView(tile) {
+    const list = tile.parentElement;
+    const top = tile.offsetTop - list.offsetTop;
+    const bottom = top + tile.offsetHeight;
+    if (top < list.scrollTop) list.scrollTop = top;
+    else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+  }
+
+  // Offset that puts the element's centre on the centre of the screen picture.
+  function centreOffset(el) {
+    const crt = el.offsetParent;
     return {
-      dx: crt.offsetWidth / 2 - (tile.offsetLeft + tile.offsetWidth / 2),
-      dy: crt.offsetHeight / 2 - (tile.offsetTop - scrolled + tile.offsetHeight / 2),
+      dx: crt.offsetWidth / 2 - (el.offsetLeft + el.offsetWidth / 2),
+      dy: crt.offsetHeight / 2 - (el.offsetTop + el.offsetHeight / 2),
     };
   }
 
   function launch(tile) {
     if (launching) return;
     launching = true;
-    const { dx, dy } = centreOffset(tile);
-    tile.style.setProperty('--dx', `${dx}px`);
-    tile.style.setProperty('--dy', `${dy}px`);
-    tile.classList.add('chosen');
+    clearTimeout(selectTimer);
+    clearTimeout(attractTimer);
+    feature(tile);
+    const { dx, dy } = centreOffset(previewArt);
+    previewArt.style.setProperty('--dx', `${dx}px`);
+    previewArt.style.setProperty('--dy', `${dy}px`);
+    previewArt.classList.add('chosen');
     screen.classList.add('picking');
     loadingName.textContent = tile.dataset.name || '';
     loading.style.setProperty('--load-ms', `${TIMING.load}ms`);
@@ -102,22 +159,58 @@
     }, focus + zoom);
   }
 
-  document.querySelectorAll('.tile').forEach(tile => {
+  // Mouse: hovering selects and clicking starts. Touch: the first tap selects
+  // (so the preview can be read) and a second tap starts.
+  let touched = null;
+  tiles.forEach(tile => {
+    tile.addEventListener('pointerenter', e => {
+      if (e.pointerType === 'mouse') select(tile);
+    });
+    tile.addEventListener('pointerdown', e => {
+      touched = e.pointerType === 'mouse' ? null : tile;
+    });
+    tile.addEventListener('focus', () => {
+      if (touched !== tile) select(tile);
+    });
     tile.addEventListener('click', e => {
+      const tapped = touched === tile;
+      touched = null;
       // Let modified clicks open a new tab as usual.
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
-      launch(tile);
+      if (tapped && tile !== selected) select(tile);
+      else launch(tile);
     });
   });
 
-  // --- Controls: they move when used, but don't do anything (yet) ----------
+  // --- Controls: the joystick picks a game, any button starts it -----------
 
   const STICK = {
     throw: 28,     // cabinet px of pointer travel for a full tilt
     maxTilt: 28,   // degrees left/right at full tilt
     lean: 0.18,    // how much the lever lengthens/shortens when pushed up/down
+    push: 0.6,     // share of a full tilt that counts as a push
+    recentre: 0.3, // and how close to the middle it must come back before the next one
   };
+
+  let stickArmed = true;
+
+  // x and y are the stick's tilt, -1 to 1. One push moves the selection one
+  // tile; the stick has to come back to the middle before the next.
+  function steer(x, y) {
+    const d = Math.hypot(x, y);
+    if (d < STICK.recentre) stickArmed = true;
+    if (!stickArmed || d < STICK.push || launching) return;
+    stickArmed = false;
+    // The first push picks whatever the preview is showing.
+    if (!selected) {
+      select(featured || tiles[0]);
+      return;
+    }
+    const cols = tiles.filter(t => t.offsetTop === tiles[0].offsetTop).length;
+    const step = Math.abs(x) > Math.abs(y) ? Math.sign(x) : Math.sign(y) * cols;
+    select(tiles[tiles.indexOf(selected) + step] || selected);
+  }
 
   function setupStick() {
     const stick = document.getElementById('stick');
@@ -142,6 +235,7 @@
       }
       lever.style.setProperty('--tilt', `${(dx / STICK.throw) * STICK.maxTilt}deg`);
       lever.style.setProperty('--reach', String(1 - (dy / STICK.throw) * STICK.lean));
+      steer(dx / STICK.throw, dy / STICK.throw);
     });
     const release = () => {
       if (!grab) return;
@@ -150,6 +244,7 @@
       stick.classList.add('spring');
       lever.style.setProperty('--tilt', '0deg');
       lever.style.setProperty('--reach', '1');
+      steer(0, 0);
     };
     stick.addEventListener('pointerup', release);
     stick.addEventListener('pointercancel', release);
@@ -162,6 +257,10 @@
         btn.setPointerCapture(e.pointerId);
         btn.classList.add('pressed');
         e.preventDefault();
+        if (selected) {
+          clearTimeout(selectTimer);
+          launch(selected);
+        }
       });
       const up = () => btn.classList.remove('pressed');
       btn.addEventListener('pointerup', up);
@@ -190,13 +289,15 @@
     launching = false;
     loading.hidden = true;
     screen.classList.remove('picking');
-    document.querySelectorAll('.tile.chosen').forEach(t => {
-      t.classList.remove('chosen');
-      t.style.removeProperty('--dx');
-      t.style.removeProperty('--dy');
-    });
+    previewArt.classList.remove('chosen');
+    previewArt.style.removeProperty('--dx');
+    previewArt.style.removeProperty('--dy');
+    select(null);
     frame('screen');
   });
+
+  feature(tiles[0]);
+  attract();
 
   // Fonts change text widths, so wait for them before measuring.
   const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
