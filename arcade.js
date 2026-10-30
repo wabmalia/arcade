@@ -18,10 +18,14 @@
     focus: 800,       // ms for the chosen tile to move to the middle (and blink) before zooming
     zoom: 900,        // ms to zoom the rest of the way after picking a game
     load: 1200,       // ms the loading bar takes to fill
+    back: 700,        // ms for the screen to power back on, coming back from a game
+    glide: 550,       // ms for the art to glide between the preview and the middle (style.css)
   };
 
   const SELECT_MS = 5000;  // the selection goes away after this long without a push
   const ATTRACT_MS = 2500; // how long each game shows in the preview while nothing is selected
+  const RETURN_KEY = 'arcade:launched';
+  const RETURN_MS = 60 * 60 * 1000; // coming back later than this just plays the intro
 
   const stage = document.getElementById('stage');
   const screen = document.getElementById('screen');
@@ -104,6 +108,7 @@
   }
 
   function select(tile) {
+    if (launching) return;
     clearTimeout(selectTimer);
     clearTimeout(attractTimer);
     if (selected) selected.classList.remove('selected');
@@ -155,8 +160,75 @@
     setTimeout(() => frame('full', zoom), focus);
     setTimeout(() => {
       loading.hidden = false;
-      setTimeout(() => window.location.assign(tile.href), reduced ? 300 : TIMING.load + 150);
+      setTimeout(() => {
+        try {
+          sessionStorage.setItem(RETURN_KEY, JSON.stringify({ href: tile.href, at: Date.now() }));
+        } catch (err) { /* no storage: coming back just plays the intro */ }
+        window.location.assign(tile.href);
+      }, reduced ? 300 : TIMING.load + 150);
     }, focus + zoom);
+  }
+
+  // --- Coming back from a game ---------------------------------------------
+
+  // The game we're coming back from, if any: the one we launched, when the
+  // browser's back button brought us here not long after, or a game that
+  // linked back here. `restored` is for pages put back from the back/forward
+  // cache, which don't get a new navigation entry.
+  function returningFrom(restored) {
+    let saved = null;
+    try {
+      saved = JSON.parse(sessionStorage.getItem(RETURN_KEY));
+      sessionStorage.removeItem(RETURN_KEY);
+    } catch (err) { /* no storage */ }
+    const nav = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+    const back = restored || (nav && nav.type === 'back_forward');
+    if (saved && back && Date.now() - saved.at < RETURN_MS) {
+      return tiles.find(t => t.href === saved.href) || null;
+    }
+    if (restored || !document.referrer) return null;
+    return tiles.find(t => document.referrer.startsWith(t.href)) || null;
+  }
+
+  // The launch in reverse: start zoomed in on the game's art, power the
+  // screen back on, zoom out and glide the art back into the preview.
+  function comeBack(tile) {
+    clearTimeout(selectTimer);
+    clearTimeout(attractTimer);
+    loading.hidden = true;
+    launching = false;
+    if (reduced) {
+      screen.classList.remove('picking');
+      previewArt.classList.remove('chosen');
+      frame('screen');
+      powerOn();
+      select(tile);
+      return;
+    }
+    launching = true;
+    // Set the zoomed-in picture up at once, without transitions.
+    screen.classList.add('still', 'returning');
+    screen.classList.remove('powered');
+    feature(tile);
+    const { dx, dy } = centreOffset(previewArt);
+    previewArt.style.setProperty('--dx', `${dx}px`);
+    previewArt.style.setProperty('--dy', `${dy}px`);
+    previewArt.classList.add('chosen');
+    screen.classList.add('picking');
+    frame('full');
+    void screen.offsetWidth;
+    screen.classList.remove('still');
+    powerOn();
+    setTimeout(() => frame('screen', TIMING.zoom), TIMING.back);
+    setTimeout(() => {
+      screen.classList.remove('picking');
+      previewArt.classList.remove('chosen');
+    }, TIMING.back + TIMING.zoom);
+    setTimeout(() => {
+      screen.classList.remove('returning');
+      launching = false;
+      select(tile);
+    }, TIMING.back + TIMING.zoom + TIMING.glide);
   }
 
   // Mouse: hovering selects and clicking starts. Touch: the first tap selects
@@ -283,9 +355,15 @@
   window.addEventListener('resize', () => frame(shot));
 
   // Coming back with the browser's back button can restore the page as we
-  // left it (zoomed in, loading). Put it back on the game select.
+  // left it (zoomed in, loading). Play the way back, or at least put it back
+  // on the game select.
   window.addEventListener('pageshow', e => {
     if (!e.persisted) return;
+    const from = returningFrom(true);
+    if (from) {
+      comeBack(from);
+      return;
+    }
     launching = false;
     loading.hidden = true;
     screen.classList.remove('picking');
@@ -301,5 +379,7 @@
 
   // Fonts change text widths, so wait for them before measuring.
   const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  ready.then(intro, intro);
+  const from = returningFrom(false);
+  const start = from ? () => comeBack(from) : intro;
+  ready.then(start, start);
 })();
