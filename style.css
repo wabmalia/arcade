@@ -240,12 +240,35 @@ html, body {
 }
 
 .insert-coin {
-  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
   font-family: var(--pixel);
-  font-size: 10px;
+  font-size: 14px;
   letter-spacing: 2px;
   color: var(--red);
+  text-decoration: none;
+  outline: none;
   animation: blink 1.2s steps(1) infinite;
+}
+/* The PayPal mark, drawn on the font's pixel grid: the white P is as tall
+   as the capitals (7 of the font's 8 pixels, at the top of the line) and its
+   shadow hangs one pixel below. */
+.paypal {
+  width: 0.75em;
+  height: 1em;
+  flex: none;
+  align-self: flex-start;
+}
+.insert-coin:hover,
+.insert-coin:focus-visible {
+  animation: none;
+  text-shadow: 0 0 8px rgb(226 85 63 / 0.9);
+}
+.insert-coin:focus-visible {
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgb(242 177 52 / 0.6);
 }
 @keyframes blink {
   50% { opacity: 0; }
