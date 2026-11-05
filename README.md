@@ -14,6 +14,10 @@ description. The artwork is an inline 200x110 SVG. The screen shows it as a
 thumbnail and, for the selected game, big in the preview with the name and
 description beside it.
 
+A game that needs a keyboard can be kept off phones and tablets with a
+`data-desktop-only` attribute on its tile: it's only offered where there's a
+mouse or trackpad.
+
 ## Controls
 
 Hover or tap a thumbnail to select it, click or tap it again to start. The

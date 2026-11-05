@@ -33,6 +33,9 @@
   const loadingName = document.getElementById('loading-name');
   const preview = document.getElementById('preview');
   const previewArt = document.getElementById('preview-art');
+  // Games that need a keyboard leave the cabinet on phones and tablets.
+  const desktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!desktop) document.querySelectorAll('.tile[data-desktop-only]').forEach(t => t.remove());
   const tiles = [...document.querySelectorAll('.tile')];
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
